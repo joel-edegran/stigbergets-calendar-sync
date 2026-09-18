@@ -12,6 +12,8 @@ export interface Config {
   EVENT_PREFIX: string;
   SKIP_EXISTING_EVENTS: boolean;
   DAILY_LOOKBACK_DAYS: number;
+  LOG_SEPARATOR: string;
+  LOG_SUB_SEPARATOR: string;
 }
 
 export const CONFIG: Config = {
@@ -28,6 +30,8 @@ export const CONFIG: Config = {
   EVENT_PREFIX: '🍺 Release: ',
   SKIP_EXISTING_EVENTS: true,
   DAILY_LOOKBACK_DAYS: 7,
+  LOG_SEPARATOR: '========================================',
+  LOG_SUB_SEPARATOR: '----------------------------------------',
 };
 
 export function getApiKey_(): string {

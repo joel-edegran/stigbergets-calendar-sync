@@ -8,9 +8,9 @@ global.importStigbergetsAll = function importStigbergetsAll() {
   validateConfig_();
   const calendar = getCalendar_();
 
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log('STIGBERGETS – FULL IMPORT');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log('Hämtar produkter från Systembolaget...');
 
   const products = fetchAllProducts_();
@@ -59,9 +59,9 @@ global.importStigbergetsDaily = function importStigbergetsDaily() {
   validateConfig_();
   const calendar = getCalendar_();
 
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log('STIGBERGETS – DAGLIG IMPORT');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
 
   const minDateString = getMinLookbackDateString_();
   Logger.log(`API-filter: releasedatum från ${minDateString} och framåt.`);
@@ -127,9 +127,9 @@ global.inspectApi = function inspectApi() {
   const products = extractProductsArray_(data);
   if (!products.length) throw new Error(`Hittade inga produkter i API-svaret:\n${JSON.stringify(data, null, 2)}`);
 
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log('FÄLT SOM RETURNERAS');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
 
   Object.keys(products[0])
     .sort()
@@ -138,9 +138,9 @@ global.inspectApi = function inspectApi() {
 
 global.testStigbergetFilter = function testStigbergetFilter() {
   validateConfig_();
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log('TESTAR STIGBERGET-FILTER');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
 
   const products = fetchAllProducts_();
   Logger.log(`Totalt hämtade: ${products.length}`);
@@ -158,9 +158,9 @@ global.testStigbergetFilter = function testStigbergetFilter() {
 
 global.testImport = function testImport() {
   validateConfig_();
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log('TESTIMPORT');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
 
   const products = fetchAllProducts_();
   const stigbergetProducts = products.filter((product) => isStigbergetProduct_(product));
@@ -170,14 +170,14 @@ global.testImport = function testImport() {
   Logger.log(`Stigberget-produkter: ${stigbergetProducts.length}`);
   Logger.log('');
   Logger.log('PRODUKTER SOM SKULLE IMPORTERAS');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
 
   stigbergetProducts.forEach((product) => {
     const launchDate = getLaunchDate_(product);
     const productNumber = getProductNumber_(product);
 
     Logger.log('');
-    Logger.log('----------------------------------------');
+    Logger.log(CONFIG.LOG_SUB_SEPARATOR);
     Logger.log(`Release: ${formatDate_(launchDate)}`);
     Logger.log(`Titel: ${CONFIG.EVENT_PREFIX}${getProductName_(product)}`);
     Logger.log(`Producent: ${getProducerName_(product)}`);
@@ -188,14 +188,14 @@ global.testImport = function testImport() {
   });
 
   Logger.log('');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log('TESTIMPORT KLAR');
   Logger.log('Inga kalenderhändelser skapades.');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
 };
 
 global.clearCalendar = function clearCalendar() {
-  const targetCalendarName = 'Stigbergets';
+  const targetCalendarName = CONFIG.CALENDAR_NAME;
   const calendars = CalendarApp.getCalendarsByName(targetCalendarName);
   if (!calendars.length) {
     Logger.log(`Hittade ingen kalender med namnet: ${targetCalendarName}`);
@@ -278,28 +278,28 @@ function getApiKeyFromConfig_(): string {
 
 function logSummary_(title: string, totalFetched: number, filtered: number, created: number, existing: number, missingDate: number, missingNumber: number): void {
   Logger.log('');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log(title);
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log(`Produkter hämtade: ${totalFetched}`);
   Logger.log(`Stigberget-produkter: ${filtered}`);
   Logger.log(`Skapade events: ${created}`);
   Logger.log(`Redan befintliga: ${existing}`);
   Logger.log(`Utan releasedatum: ${missingDate}`);
   Logger.log(`Utan artikelnummer: ${missingNumber}`);
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
 }
 
 function logDailySummary_(minDateString: string, totalFetched: number, filtered: number, created: number, existing: number, missingNumber: number): void {
   Logger.log('');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log('DAGLIG IMPORT KLAR');
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log(`API-datumfilter: från ${minDateString}`);
   Logger.log(`Produkter hämtade från API:t: ${totalFetched}`);
   Logger.log(`Stigberget-produkter: ${filtered}`);
   Logger.log(`Skapade events: ${created}`);
   Logger.log(`Redan befintliga: ${existing}`);
   Logger.log(`Utan artikelnummer: ${missingNumber}`);
-  Logger.log('========================================');
+  Logger.log(CONFIG.LOG_SEPARATOR);
 }
