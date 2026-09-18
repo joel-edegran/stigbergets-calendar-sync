@@ -29,11 +29,7 @@ export function eventExists_(calendar: GoogleAppsScript.Calendar.Calendar, date:
   end.setDate(end.getDate() + 1);
   end.setHours(0, 0, 0, 0);
 
-  const events = calendar.getEvents(start, end);
-  return events.some((event) => {
-    const description = event.getDescription() || '';
-    return description.indexOf(marker) !== -1;
-  });
+  return calendar.getEvents(start, end).some((event) => (event.getDescription() || '').indexOf(marker) !== -1);
 }
 
 export function createCalendarEvent_(calendar: GoogleAppsScript.Calendar.Calendar, product: SystembolagetProduct, launchDate: Date): void {
@@ -46,12 +42,9 @@ export function createCalendarEvent_(calendar: GoogleAppsScript.Calendar.Calenda
   const end = new Date(launchDate);
   end.setHours(CONFIG.RELEASE_END_HOUR, CONFIG.RELEASE_END_MINUTE, 0, 0);
 
-  const title = CONFIG.EVENT_PREFIX + name;
-  const description = buildDescription_(product);
-
-  calendar.createEvent(title, start, end, {
+  calendar.createEvent(CONFIG.EVENT_PREFIX + name, start, end, {
     location: CONFIG.LOCATION,
-    description: description,
+    description: buildDescription_(product),
   });
 
   Logger.log(`SKAPADE: ${formatDate_(launchDate)} ${name} (${productNumber})`);
@@ -69,10 +62,7 @@ function buildDescription_(product: SystembolagetProduct): string {
   if (producerName || productNameThin) lines.push('');
 
   const category = getCategory_(product);
-  if (category) {
-    lines.push(category);
-    lines.push('');
-  }
+  if (category) lines.push(category, '');
 
   const price = getPrice_(product);
   if (price) lines.push(`${price} kr`);
@@ -92,50 +82,35 @@ function buildDescription_(product: SystembolagetProduct): string {
   lines.push('');
 
   const taste = getTaste_(product);
-  if (taste) {
-    lines.push(taste);
-    lines.push('');
-  }
+  if (taste) lines.push(taste, '');
 
   const usage = getUsage_(product);
-  if (usage) {
-    lines.push(usage);
-    lines.push('');
-  }
+  if (usage) lines.push(usage, '');
 
   const url = getProductUrl_(product);
   if (url) lines.push(url);
 
-  lines.push('');
-  lines.push(createMarker_(productNumber, getLaunchDate_(product)));
+  lines.push('', createMarker_(productNumber, getLaunchDate_(product)));
 
   return lines.join('\n');
 }
 
 export function getCategory_(product: SystembolagetProduct): string {
-    return [product.categoryLevel1, product.categoryLevel2, product.categoryLevel3, product.categoryLevel4]
-    .map((val) => (val === null || val === undefined ? '' : String(val).trim()))
-    .filter((val) => val !== '')
+  return [product.categoryLevel1, product.categoryLevel2, product.categoryLevel3, product.categoryLevel4]
+    .map((val) => (val ? String(val).trim() : ''))
+    .filter(Boolean)
     .join(' > ');
 }
 
 function getPrice_(product: SystembolagetProduct): string {
-  const value = product.priceInclVat ?? product.PriceInclVat ?? product.price ?? product.Price;
+  const rawValue = product.priceInclVat ?? product.PriceInclVat ?? product.price ?? product.Price;
+  if (rawValue === null || rawValue === undefined) return '';
 
-  if (value === null || value === undefined) {
-    return '';
-  }
-
-  // Convert to string safely to avoid never-narrowing issues
-  const stringValue = String(value);
-  if (stringValue.trim() === '') {
-    return '';
-  }
+  const stringValue = String(rawValue).trim();
+  if (!stringValue) return '';
 
   const num = Number(stringValue);
-  if (!Number.isFinite(num)) {
-    return stringValue;
-  }
+  if (!Number.isFinite(num)) return stringValue;
 
   return num.toFixed(2).replace('.', ',');
 }
@@ -144,49 +119,38 @@ function getPackageText_(product: SystembolagetProduct): string {
   const packaging = product.bottleText || product.BottleText || product.packaging || product.Packaging || '';
   const volumeText = product.volumeText || product.VolumeText || '';
   const volume = product.volume || product.Volume || '';
-
-  let volumePart = '';
-  if (volumeText) volumePart = volumeText;
-  else if (volume) volumePart = `${Number(volume)} ml`;
+  const volumePart = volumeText || (volume ? `${Number(volume)} ml` : '');
 
   if (packaging && volumePart) return `${packaging} ${volumePart}`;
   return packaging || volumePart || '';
 }
 
 function getAlcohol_(product: SystembolagetProduct): string {
-  const value = product.alcoholPercentage ?? product.AlcoholPercentage ?? product.alcohol ?? product.Alcohol ?? null;
+  const rawValue = product.alcoholPercentage ?? product.AlcoholPercentage ?? product.alcohol ?? product.Alcohol ?? null;
+  if (rawValue === null || rawValue === undefined || String(rawValue).trim() === '') return '';
 
-  if (value === null || value === undefined || String(value).trim() === '') {
-    return '';
-  }
-
-  const num = Number(value);
-  if (!Number.isFinite(num)) {
-    return String(value);
-  }
+  const num = Number(rawValue);
+  if (!Number.isFinite(num)) return String(rawValue);
 
   return String(num).replace('.', ',');
 }
 
 function getStandardGlasses_(product: SystembolagetProduct): string {
   const rawValue = product.standardGlasses ?? product.StandardGlasses ?? product.standardGlass ?? product.StandardGlass ?? null;
-
   if (rawValue !== null && rawValue !== undefined && String(rawValue).trim() !== '') {
     const num = Number(rawValue);
-    if (!Number.isFinite(num)) {
-      return String(rawValue);
-    }
-    return String(num).replace('.', ',');
+    return Number.isFinite(num) ? num.toFixed(1).replace('.', ',') : String(rawValue);
   }
 
   const alcohol = Number(product.alcoholPercentage ?? product.AlcoholPercentage ?? 0);
   const volume = Number(product.volume ?? product.Volume ?? 0);
-  if (!alcohol || !volume) {
-    return '';
-  }
+  if (!alcohol || !volume) return '';
 
-  const grams = volume * (alcohol / 100) * 0.789;
-  const glasses = grams / 12;
+  const gramsPerAlcoholPercentAndMl = 0.789;
+  const gramsPerStandardGlass = 12;
+  const totalGrams = volume * (alcohol / 100) * gramsPerAlcoholPercentAndMl;
+  const glasses = totalGrams / gramsPerStandardGlass;
+
   return glasses.toFixed(1).replace('.', ',');
 }
 

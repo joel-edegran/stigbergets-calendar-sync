@@ -70,20 +70,14 @@ export function fetchProductPage_(page: number, extraParams?: Record<string, str
     pageSize: CONFIG.PAGE_SIZE,
     sortBy: 'ProductLaunchDate',
     sortDirection: 'Ascending',
+    ...(extraParams || {}),
   };
-
-  if (extraParams) {
-    Object.keys(extraParams).forEach((key) => {
-      params[key] = extraParams[key];
-    });
-  }
 
   const query = Object.keys(params)
     .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
     .join('&');
 
   const url = `${CONFIG.API_URL}?${query}`;
-
   const options: GoogleAppsScript.URL_Fetch.URLFetchRequestOptions = {
     method: 'get',
     muteHttpExceptions: true,
@@ -94,7 +88,10 @@ export function fetchProductPage_(page: number, extraParams?: Record<string, str
     },
   };
 
-  for (let attempt = 1; attempt <= 4; attempt++) {
+  const maxAttempts = 4;
+  const backoffMultiplierMs = 2000;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const response = UrlFetchApp.fetch(url, options);
     const code = response.getResponseCode();
     const body = response.getContentText();
@@ -107,13 +104,12 @@ export function fetchProductPage_(page: number, extraParams?: Record<string, str
       }
     }
 
-    Logger.log(`API-fel HTTP ${code} (försök ${attempt}/4)`);
-    if (code === 429 || code >= 500) {
-      Utilities.sleep(attempt * 2000);
-      continue;
+    Logger.log(`API-fel HTTP ${code} (försök ${attempt}/${maxAttempts})`);
+    if (code !== 429 && code < 500) {
+      throw new Error(`Systembolagets API returnerade HTTP ${code}:\n\n${body.substring(0, 5000)}`);
     }
 
-    throw new Error(`Systembolagets API returnerade HTTP ${code}:\n\n${body.substring(0, 5000)}`);
+    Utilities.sleep(attempt * backoffMultiplierMs);
   }
 
   throw new Error('Systembolagets API gick inte att nå efter flera försök.');
@@ -121,10 +117,9 @@ export function fetchProductPage_(page: number, extraParams?: Record<string, str
 
 export function extractProducts_(response: any): SystembolagetProduct[] {
   if (Array.isArray(response)) return response;
-  if (response && Array.isArray(response.products)) return response.products;
-  if (response && Array.isArray(response.ProductSearchResults)) return response.ProductSearchResults;
-  if (response && response.data && Array.isArray(response.data.products)) return response.data.products;
-  if (response && response.data && Array.isArray(response.data.ProductSearchResults)) return response.data.ProductSearchResults;
+
+  const productsList = response?.products || response?.ProductSearchResults || response?.data?.products || response?.data?.ProductSearchResults;
+  if (Array.isArray(productsList)) return productsList;
 
   throw new Error(`Hittade ingen produktlista i API-svaret.\n\n${JSON.stringify(response, null, 2).substring(0, 10000)}`);
 }
@@ -135,30 +130,22 @@ export function fetchAllProducts_(): SystembolagetProduct[] {
 
   for (let page = 1; page <= CONFIG.MAX_PAGES; page++) {
     Logger.log(`Hämtar sida ${page}...`);
-    const response = fetchProductPage_(page);
-    const products = extractProducts_(response);
+    const products = extractProducts_(fetchProductPage_(page));
     Logger.log(`Sida ${page}: ${products.length} produkter`);
 
     if (!products.length) break;
 
-    let newProducts = 0;
+    let newProductsCount = 0;
     products.forEach((product) => {
       const id = getProductNumber_(product) || String(product.productId || product.ProductId || '');
-      if (!id) return;
+      if (!id || seen[id]) return;
 
-      if (!seen[id]) {
-        seen[id] = true;
-        allProducts.push(product);
-        newProducts++;
-      }
+      seen[id] = true;
+      allProducts.push(product);
+      newProductsCount++;
     });
 
-    if (newProducts === 0) {
-      Logger.log(`Inga nya produkter på sida ${page}. Stoppar pagination.`);
-      break;
-    }
-
-    if (products.length < CONFIG.PAGE_SIZE) break;
+    if (newProductsCount === 0 || products.length < CONFIG.PAGE_SIZE) break;
   }
 
   return allProducts;
