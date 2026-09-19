@@ -74,19 +74,19 @@ export function fetchProductPage_(page: number, extraParams?: Record<string, str
       try {
         return JSON.parse(body);
       } catch (error) {
-        throw new Error(`API-svaret kunde inte tolkas som JSON.\n\n${body.substring(0, 5000)}`);
+        throw new Error(`API response could not be parsed as JSON.\n\n${body.substring(0, 5000)}`);
       }
     }
 
-    Logger.log(`API-fel HTTP ${code} (försök ${attempt}/${maxAttempts})`);
+    Logger.log(`API error HTTP ${code} (attempt ${attempt}/${maxAttempts})`);
     if (code !== 429 && code < 500) {
-      throw new Error(`Systembolagets API returnerade HTTP ${code}:\n\n${body.substring(0, 5000)}`);
+      throw new Error(`Systembolaget API returned HTTP ${code}:\n\n${body.substring(0, 5000)}`);
     }
 
     Utilities.sleep(attempt * backoffMultiplierMs);
   }
 
-  throw new Error('Systembolagets API gick inte att nå efter flera försök.');
+  throw new Error('Systembolaget API could not be reached after multiple attempts.');
 }
 
 export function extractProducts_(response: any): SystembolagetProduct[] {
@@ -95,7 +95,7 @@ export function extractProducts_(response: any): SystembolagetProduct[] {
   const productsList = response?.products || response?.ProductSearchResults || response?.data?.products || response?.data?.ProductSearchResults;
   if (Array.isArray(productsList)) return productsList;
 
-  throw new Error(`Hittade ingen produktlista i API-svaret.\n\n${JSON.stringify(response, null, 2).substring(0, 10000)}`);
+  throw new Error(`No product list found in API response.\n\n${JSON.stringify(response, null, 2).substring(0, 10000)}`);
 }
 
 export function fetchAllProducts_(): SystembolagetProduct[] {
@@ -103,9 +103,9 @@ export function fetchAllProducts_(): SystembolagetProduct[] {
   const seen: Record<string, boolean> = {};
 
   for (let page = 1; page <= CONFIG.MAX_PAGES; page++) {
-    Logger.log(`Hämtar sida ${page}...`);
+    Logger.log(`Fetching page ${page}...`);
     const products = extractProducts_(fetchProductPage_(page));
-    Logger.log(`Sida ${page}: ${products.length} produkter`);
+    Logger.log(`Page ${page}: ${products.length} products`);
 
     if (!products.length) break;
 
@@ -157,7 +157,7 @@ export function getProductName_(product: SystembolagetProduct): string {
   const thin = String(product.productNameThin || product.ProductNameThin || product.nameThin || '').trim();
 
   if (bold && thin) return `${bold} - ${thin}`;
-  return bold || thin || 'Okänd produkt';
+  return bold || thin || 'Unknown product';
 }
 
 export function getProducerName_(product: SystembolagetProduct): string {
@@ -184,7 +184,7 @@ export function getLaunchDate_(product: SystembolagetProduct): Date | null {
 }
 
 export function formatDate_(date: Date | null): string {
-  if (!date) return 'SAKNAS';
+  if (!date) return 'MISSING';
   return Utilities.formatDate(date, Session.getScriptTimeZone(), 'yyyy-MM-dd');
 }
 

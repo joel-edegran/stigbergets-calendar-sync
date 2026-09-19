@@ -13,7 +13,7 @@ export function getCalendar_(): GoogleAppsScript.Calendar.Calendar {
   const calendars = CalendarApp.getCalendarsByName(CONFIG.CALENDAR_NAME);
   if (calendars.length > 0) return calendars[0];
 
-  Logger.log(`Kalendern "${CONFIG.CALENDAR_NAME}" finns inte. Skapar den.`);
+  Logger.log(`Calendar "${CONFIG.CALENDAR_NAME}" does not exist. Creating it.`);
   return CalendarApp.createCalendar(CONFIG.CALENDAR_NAME);
 }
 
@@ -47,7 +47,7 @@ export function createCalendarEvent_(calendar: GoogleAppsScript.Calendar.Calenda
     description: buildDescription_(product),
   });
 
-  Logger.log(`SKAPADE: ${formatDate_(launchDate)} ${name} (${productNumber})`);
+  Logger.log(`CREATED: ${formatDate_(launchDate)} ${name} (${productNumber})`);
 }
 
 function buildDescription_(product: SystembolagetProduct): string {
@@ -68,7 +68,7 @@ function buildDescription_(product: SystembolagetProduct): string {
   if (price) lines.push(`${price} kr`);
 
   const productNumber = getProductNumber_(product);
-  if (productNumber) lines.push(`Nr ${productNumber}`);
+  if (productNumber) lines.push(`No. ${productNumber}`);
 
   const packageText = getPackageText_(product);
   if (packageText) lines.push(packageText);
@@ -77,7 +77,7 @@ function buildDescription_(product: SystembolagetProduct): string {
   if (alcohol) lines.push(`${alcohol} % vol.`);
 
   const standardGlasses = getStandardGlasses_(product);
-  if (standardGlasses) lines.push(`${standardGlasses} standardglas`);
+  if (standardGlasses) lines.push(`${standardGlasses} standard glasses`);
 
   lines.push('');
 

@@ -38,8 +38,8 @@ export function getApiKey_(): string {
   const apiKey = PropertiesService.getScriptProperties().getProperty('SYSTEMBOLAGET_API_KEY');
   if (!apiKey) {
     throw new Error(
-      'Script Property "SYSTEMBOLAGET_API_KEY" saknas.\n\n' +
-      'Gå till Project Settings → Script Properties och lägg till API-nyckeln där.'
+      'Script Property "SYSTEMBOLAGET_API_KEY" is missing.\n\n' +
+      'Go to Project Settings → Script Properties and add the API key there.'
     );
   }
   return apiKey.trim();
@@ -47,6 +47,6 @@ export function getApiKey_(): string {
 
 export function validateConfig_(): void {
   getApiKey_();
-  if (!CONFIG.API_URL) throw new Error('CONFIG.API_URL saknas.');
-  if (!CONFIG.SEARCH_QUERY) throw new Error('CONFIG.SEARCH_QUERY saknas.');
+  if (!CONFIG.API_URL) throw new Error('CONFIG.API_URL is missing.');
+  if (!CONFIG.SEARCH_QUERY) throw new Error('CONFIG.SEARCH_QUERY is missing.');
 }
