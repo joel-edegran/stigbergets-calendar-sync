@@ -1,8 +1,7 @@
+// src/index.ts
 import { CONFIG, validateConfig_, getNotificationEmail_ } from './config';
 import { fetchAllProducts_, fetchProductPage_, extractProducts_, isStigbergetProduct_, getLaunchDate_, getProductNumber_, getProductName_, getProducerName_, getProductNameThin_, formatDate_ } from './api';
 import { getCalendar_, createMarker_, eventExists_, createCalendarEvent_, getCategory_ } from './calendar';
-
-declare const global: any;
 
 interface CreatedProductInfo {
   name: string;
@@ -10,7 +9,7 @@ interface CreatedProductInfo {
   launchDate: Date;
 }
 
-global.importStigbergetsAll = function importStigbergetsAll() {
+function importStigbergetsAll(): void {
   validateConfig_();
   const calendar = getCalendar_();
 
@@ -66,9 +65,9 @@ global.importStigbergetsAll = function importStigbergetsAll() {
 
   logSummary_('FULL IMPORT COMPLETED', products.length, stigbergetProducts.length, created, existing, missingDate, missingNumber);
   sendNotificationEmail_('Stigberget Calendar: Full Import Completed', createdProducts, created, existing);
-};
+}
 
-global.importStigbergetsDaily = function importStigbergetsDaily() {
+function importStigbergetsDaily(): void {
   validateConfig_();
   const calendar = getCalendar_();
 
@@ -119,9 +118,9 @@ global.importStigbergetsDaily = function importStigbergetsDaily() {
 
   logDailySummary_(minDateString, allProducts.length, stigbergetProducts.length, created, existing, missingNumber);
   sendNotificationEmail_('Stigberget Calendar: Daily Import Completed', createdProducts, created, existing);
-};
+}
 
-global.inspectApi = function inspectApi() {
+function inspectApi(): void {
   validateConfig_();
   const url = `${CONFIG.API_URL}?textQuery=${encodeURIComponent(CONFIG.SEARCH_QUERY)}&page=1&pageSize=1`;
   const response = UrlFetchApp.fetch(url, {
@@ -154,9 +153,9 @@ global.inspectApi = function inspectApi() {
   Object.keys(products[0])
     .sort()
     .forEach((key) => Logger.log(`${key} = ${JSON.stringify(products[0][key])}`));
-};
+}
 
-global.testStigbergetFilter = function testStigbergetFilter() {
+function testStigbergetFilter(): void {
   validateConfig_();
   Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log('TESTING STIGBERGET FILTER');
@@ -174,9 +173,9 @@ global.testStigbergetFilter = function testStigbergetFilter() {
 
   Logger.log('');
   Logger.log(`Number of Stigberget matches: ${matches}`);
-};
+}
 
-global.testImport = function testImport() {
+function testImport(): void {
   validateConfig_();
   Logger.log(CONFIG.LOG_SEPARATOR);
   Logger.log('TEST IMPORT');
@@ -212,9 +211,9 @@ global.testImport = function testImport() {
   Logger.log('TEST IMPORT COMPLETED');
   Logger.log('No calendar events were created.');
   Logger.log(CONFIG.LOG_SEPARATOR);
-};
+}
 
-global.clearCalendar = function clearCalendar() {
+function clearCalendar(): void {
   const targetCalendarName = CONFIG.CALENDAR_NAME;
   const calendars = CalendarApp.getCalendarsByName(targetCalendarName);
   if (!calendars.length) {
@@ -232,7 +231,7 @@ global.clearCalendar = function clearCalendar() {
 
   events.forEach((event) => event.deleteEvent());
   Logger.log('Calendar has been cleared.');
-};
+}
 
 function sortProductsByLaunchDate_(products: any[]): void {
   products.sort((a, b) => {
@@ -354,3 +353,10 @@ function logDailySummary_(minDateString: string, totalFetched: number, filtered:
   Logger.log(`Without product number: ${missingNumber}`);
   Logger.log(CONFIG.LOG_SEPARATOR);
 }
+
+(globalThis as any).importStigbergetsAll = importStigbergetsAll;
+(globalThis as any).importStigbergetsDaily = importStigbergetsDaily;
+(globalThis as any).inspectApi = inspectApi;
+(globalThis as any).testStigbergetFilter = testStigbergetFilter;
+(globalThis as any).testImport = testImport;
+(globalThis as any).clearCalendar = clearCalendar;

@@ -6,14 +6,13 @@ export default defineConfig({
     emptyOutDir: true,
     lib: {
       entry: './src/index.ts',
-      name: 'code',
-      formats: ['iife'],
+      formats: ['es'],
       fileName: () => 'code.gs',
     },
     rollupOptions: {
       external: [],
       output: {
-        extend: true,
+        compact: false,
       },
     },
     target: 'esnext',
