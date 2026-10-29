@@ -11,9 +11,6 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [],
-      output: {
-        compact: false,
-      },
     },
     target: 'esnext',
     minify: false,
