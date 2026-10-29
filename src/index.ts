@@ -1,8 +1,14 @@
-import { CONFIG, validateConfig_ } from './config';
+import { CONFIG, validateConfig_, getNotificationEmail_ } from './config';
 import { fetchAllProducts_, fetchProductPage_, extractProducts_, isStigbergetProduct_, getLaunchDate_, getProductNumber_, getProductName_, getProducerName_, getProductNameThin_, formatDate_ } from './api';
 import { getCalendar_, createMarker_, eventExists_, createCalendarEvent_, getCategory_ } from './calendar';
 
 declare const global: any;
+
+interface CreatedProductInfo {
+  name: string;
+  productNumber: string;
+  launchDate: Date;
+}
 
 global.importStigbergetsAll = function importStigbergetsAll() {
   validateConfig_();
@@ -25,6 +31,7 @@ global.importStigbergetsAll = function importStigbergetsAll() {
   let existing = 0;
   let missingDate = 0;
   let missingNumber = 0;
+  const createdProducts: CreatedProductInfo[] = [];
 
   stigbergetProducts.forEach((product) => {
     const launchDate = getLaunchDate_(product);
@@ -50,9 +57,15 @@ global.importStigbergetsAll = function importStigbergetsAll() {
 
     createCalendarEvent_(calendar, product, launchDate);
     created++;
+    createdProducts.push({
+      name: getProductName_(product),
+      productNumber,
+      launchDate,
+    });
   });
 
   logSummary_('FULL IMPORT COMPLETED', products.length, stigbergetProducts.length, created, existing, missingDate, missingNumber);
+  sendNotificationEmail_('Stigberget Calendar: Full Import Completed', createdProducts, created, existing);
 };
 
 global.importStigbergetsDaily = function importStigbergetsDaily() {
@@ -75,6 +88,7 @@ global.importStigbergetsDaily = function importStigbergetsDaily() {
   let created = 0;
   let existing = 0;
   let missingNumber = 0;
+  const createdProducts: CreatedProductInfo[] = [];
 
   stigbergetProducts.forEach((product) => {
     const launchDate = getLaunchDate_(product);
@@ -96,9 +110,15 @@ global.importStigbergetsDaily = function importStigbergetsDaily() {
 
     createCalendarEvent_(calendar, product, launchDate);
     created++;
+    createdProducts.push({
+      name: getProductName_(product),
+      productNumber,
+      launchDate,
+    });
   });
 
   logDailySummary_(minDateString, allProducts.length, stigbergetProducts.length, created, existing, missingNumber);
+  sendNotificationEmail_('Stigberget Calendar: Daily Import Completed', createdProducts, created, existing);
 };
 
 global.inspectApi = function inspectApi() {
@@ -274,6 +294,37 @@ function getApiKeyFromConfig_(): string {
   const apiKey = PropertiesService.getScriptProperties().getProperty('SYSTEMBOLAGET_API_KEY');
   if (!apiKey) throw new Error('Script Property "SYSTEMBOLAGET_API_KEY" is missing.');
   return apiKey.trim();
+}
+
+function sendNotificationEmail_(subject: string, createdProducts: CreatedProductInfo[], createdCount: number, existingCount: number): void {
+  if (!CONFIG.ENABLE_EMAIL_NOTIFICATIONS) return;
+
+  const recipientEmail = getNotificationEmail_();
+  if (!recipientEmail) return;
+
+  const lines: string[] = [
+    `Summary of Stigberget calendar sync:`,
+    `- New events created: ${createdCount}`,
+    `- Existing events skipped: ${existingCount}`,
+    ``,
+  ];
+
+  if (createdCount > 0) {
+    lines.push(`Newly added products:`);
+    createdProducts.forEach((item) => {
+      lines.push(`• [${formatDate_(item.launchDate)}] ${item.name} (No. ${item.productNumber})`);
+    });
+  } else {
+    lines.push(`No new products were added during this run.`);
+  }
+
+  MailApp.sendEmail({
+    to: recipientEmail,
+    subject: subject,
+    body: lines.join('\n'),
+  });
+
+  Logger.log(`Notification email sent to ${recipientEmail}`);
 }
 
 function logSummary_(title: string, totalFetched: number, filtered: number, created: number, existing: number, missingDate: number, missingNumber: number): void {

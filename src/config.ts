@@ -14,6 +14,7 @@ export interface Config {
   DAILY_LOOKBACK_DAYS: number;
   LOG_SEPARATOR: string;
   LOG_SUB_SEPARATOR: string;
+  ENABLE_EMAIL_NOTIFICATIONS: boolean;
 }
 
 export const CONFIG: Config = {
@@ -32,6 +33,7 @@ export const CONFIG: Config = {
   DAILY_LOOKBACK_DAYS: 7,
   LOG_SEPARATOR: '========================================',
   LOG_SUB_SEPARATOR: '----------------------------------------',
+  ENABLE_EMAIL_NOTIFICATIONS: true,
 };
 
 export function getApiKey_(): string {
@@ -45,8 +47,22 @@ export function getApiKey_(): string {
   return apiKey.trim();
 }
 
+export function getNotificationEmail_(): string {
+  const email = PropertiesService.getScriptProperties().getProperty('NOTIFICATION_EMAIL');
+  if (!email) {
+    throw new Error(
+      'Script Property "NOTIFICATION_EMAIL" is missing.\n\n' +
+      'Go to Project Settings → Script Properties and add the notification email there.'
+    );
+  }
+  return email.trim();
+}
+
 export function validateConfig_(): void {
   getApiKey_();
   if (!CONFIG.API_URL) throw new Error('CONFIG.API_URL is missing.');
   if (!CONFIG.SEARCH_QUERY) throw new Error('CONFIG.SEARCH_QUERY is missing.');
+  if (CONFIG.ENABLE_EMAIL_NOTIFICATIONS) {
+    getNotificationEmail_();
+  }
 }
