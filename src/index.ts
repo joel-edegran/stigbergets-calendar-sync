@@ -59,7 +59,7 @@ function importStigbergetsDaily(): void {
   });
 
   logDailySummary_(minDateString, allProducts.length, stigbergetProducts.length, created, existing, missingNumber);
-  sendNotificationEmail_('Stigberget Calendar: Daily Import Completed', createdProducts, created, existing);
+  sendNotificationEmail_('🍺 Stigbergets Calendar: Daily Import Completed', createdProducts, created, existing);
 }
 
 function importStigbergetsAll(): void {
@@ -117,7 +117,7 @@ function importStigbergetsAll(): void {
   });
 
   logSummary_('FULL IMPORT COMPLETED', products.length, stigbergetProducts.length, created, existing, missingDate, missingNumber);
-  sendNotificationEmail_('Stigberget Calendar: Full Import Completed', createdProducts, created, existing);
+  sendNotificationEmail_('🍺 Stigbergets Calendar: Full Import Completed', createdProducts, created, existing);
 }
 
 function inspectApi(): void {
@@ -303,13 +303,13 @@ function sendNotificationEmail_(subject: string, createdProducts: CreatedProduct
   if (!recipientEmail) return;
 
   const lines: string[] = [
-    `Summary of Stigberget calendar sync:`,
-    `- New events created: ${createdCount}`,
-    `- Existing events skipped: ${existingCount}`,
+    `Summary of Stigbergets calendar sync:`,
+    `• New events created: ${createdCount}`,
+    `• Existing events skipped: ${existingCount}`,
     ``,
   ];
 
-  lines.push(`Newly added products:`);
+  lines.push(`Added products:`);
   createdProducts.forEach((item) => {
     lines.push(`• [${formatDate_(item.launchDate)}] ${item.name} (No. ${item.productNumber})`);
     });
