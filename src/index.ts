@@ -9,6 +9,59 @@ interface CreatedProductInfo {
   launchDate: Date;
 }
 
+function importStigbergetsDaily(): void {
+  validateConfig_();
+  const calendar = getCalendar_();
+
+  Logger.log(CONFIG.LOG_SEPARATOR);
+  Logger.log('STIGBERGETS – DAILY IMPORT');
+  Logger.log(CONFIG.LOG_SEPARATOR);
+
+  const minDateString = getMinLookbackDateString_();
+  Logger.log(`API filter: launch date from ${minDateString} onwards.`);
+
+  const allProducts = fetchPaginatedProductsWithFilter_({ 'productLaunch.min': minDateString });
+  const stigbergetProducts = allProducts.filter((product) => isStigbergetProduct_(product));
+  Logger.log(`Stigberget products: ${stigbergetProducts.length}`);
+
+  sortProductsByLaunchDate_(stigbergetProducts);
+
+  let created = 0;
+  let existing = 0;
+  let missingNumber = 0;
+  const createdProducts: CreatedProductInfo[] = [];
+
+  stigbergetProducts.forEach((product) => {
+    const launchDate = getLaunchDate_(product);
+    if (!launchDate) return;
+
+    const productNumber = getProductNumber_(product);
+    if (!productNumber) {
+      Logger.log(`MISSING PRODUCT NUMBER: ${getProductName_(product)}`);
+      missingNumber++;
+      return;
+    }
+
+    const marker = createMarker_(productNumber, launchDate);
+    if (CONFIG.SKIP_EXISTING_EVENTS && eventExists_(calendar, launchDate, marker)) {
+      Logger.log(`ALREADY EXISTS: ${productNumber} – ${getProductName_(product)}`);
+      existing++;
+      return;
+    }
+
+    createCalendarEvent_(calendar, product, launchDate);
+    created++;
+    createdProducts.push({
+      name: getProductName_(product),
+      productNumber,
+      launchDate,
+    });
+  });
+
+  logDailySummary_(minDateString, allProducts.length, stigbergetProducts.length, created, existing, missingNumber);
+  sendNotificationEmail_('Stigberget Calendar: Daily Import Completed', createdProducts, created, existing);
+}
+
 function importStigbergetsAll(): void {
   validateConfig_();
   const calendar = getCalendar_();
@@ -65,59 +118,6 @@ function importStigbergetsAll(): void {
 
   logSummary_('FULL IMPORT COMPLETED', products.length, stigbergetProducts.length, created, existing, missingDate, missingNumber);
   sendNotificationEmail_('Stigberget Calendar: Full Import Completed', createdProducts, created, existing);
-}
-
-function importStigbergetsDaily(): void {
-  validateConfig_();
-  const calendar = getCalendar_();
-
-  Logger.log(CONFIG.LOG_SEPARATOR);
-  Logger.log('STIGBERGETS – DAILY IMPORT');
-  Logger.log(CONFIG.LOG_SEPARATOR);
-
-  const minDateString = getMinLookbackDateString_();
-  Logger.log(`API filter: launch date from ${minDateString} onwards.`);
-
-  const allProducts = fetchPaginatedProductsWithFilter_({ 'productLaunch.min': minDateString });
-  const stigbergetProducts = allProducts.filter((product) => isStigbergetProduct_(product));
-  Logger.log(`Stigberget products: ${stigbergetProducts.length}`);
-
-  sortProductsByLaunchDate_(stigbergetProducts);
-
-  let created = 0;
-  let existing = 0;
-  let missingNumber = 0;
-  const createdProducts: CreatedProductInfo[] = [];
-
-  stigbergetProducts.forEach((product) => {
-    const launchDate = getLaunchDate_(product);
-    if (!launchDate) return;
-
-    const productNumber = getProductNumber_(product);
-    if (!productNumber) {
-      Logger.log(`MISSING PRODUCT NUMBER: ${getProductName_(product)}`);
-      missingNumber++;
-      return;
-    }
-
-    const marker = createMarker_(productNumber, launchDate);
-    if (CONFIG.SKIP_EXISTING_EVENTS && eventExists_(calendar, launchDate, marker)) {
-      Logger.log(`ALREADY EXISTS: ${productNumber} – ${getProductName_(product)}`);
-      existing++;
-      return;
-    }
-
-    createCalendarEvent_(calendar, product, launchDate);
-    created++;
-    createdProducts.push({
-      name: getProductName_(product),
-      productNumber,
-      launchDate,
-    });
-  });
-
-  logDailySummary_(minDateString, allProducts.length, stigbergetProducts.length, created, existing, missingNumber);
-  sendNotificationEmail_('Stigberget Calendar: Daily Import Completed', createdProducts, created, existing);
 }
 
 function inspectApi(): void {
