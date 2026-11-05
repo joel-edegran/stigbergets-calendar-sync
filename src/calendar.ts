@@ -146,10 +146,8 @@ function getStandardGlasses_(product: SystembolagetProduct): string {
   const volume = Number(product.volume ?? product.Volume ?? 0);
   if (!alcohol || !volume) return '';
 
-  const gramsPerAlcoholPercentAndMl = 0.789;
-  const gramsPerStandardGlass = 12;
-  const totalGrams = volume * (alcohol / 100) * gramsPerAlcoholPercentAndMl;
-  const glasses = totalGrams / gramsPerStandardGlass;
+  const totalGrams = volume * (alcohol / 100) * CONFIG.GRAMS_PER_ALCOHOL_PERCENT_AND_ML;
+  const glasses = totalGrams / CONFIG.GRAMS_PER_STANDARD_GLASS;
 
   return glasses.toFixed(1).replace('.', ',');
 }

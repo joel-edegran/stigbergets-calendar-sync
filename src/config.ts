@@ -15,6 +15,8 @@ export interface Config {
   LOG_SEPARATOR: string;
   LOG_SUB_SEPARATOR: string;
   ENABLE_EMAIL_NOTIFICATIONS: boolean;
+  GRAMS_PER_ALCOHOL_PERCENT_AND_ML: number;
+  GRAMS_PER_STANDARD_GLASS: number;
 }
 
 export const CONFIG: Config = {
@@ -34,6 +36,8 @@ export const CONFIG: Config = {
   LOG_SEPARATOR: '========================================',
   LOG_SUB_SEPARATOR: '----------------------------------------',
   ENABLE_EMAIL_NOTIFICATIONS: true,
+  GRAMS_PER_ALCOHOL_PERCENT_AND_ML: 0.789,
+  GRAMS_PER_STANDARD_GLASS: 12,
 };
 
 export function getApiKey_(): string {
