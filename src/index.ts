@@ -297,6 +297,7 @@ function getApiKeyFromConfig_(): string {
 
 function sendNotificationEmail_(subject: string, createdProducts: CreatedProductInfo[], createdCount: number, existingCount: number): void {
   if (!CONFIG.ENABLE_EMAIL_NOTIFICATIONS) return;
+  if (createdCount === 0) return;
 
   const recipientEmail = getNotificationEmail_();
   if (!recipientEmail) return;
@@ -308,14 +309,10 @@ function sendNotificationEmail_(subject: string, createdProducts: CreatedProduct
     ``,
   ];
 
-  if (createdCount > 0) {
-    lines.push(`Newly added products:`);
-    createdProducts.forEach((item) => {
-      lines.push(`• [${formatDate_(item.launchDate)}] ${item.name} (No. ${item.productNumber})`);
+  lines.push(`Newly added products:`);
+  createdProducts.forEach((item) => {
+    lines.push(`• [${formatDate_(item.launchDate)}] ${item.name} (No. ${item.productNumber})`);
     });
-  } else {
-    lines.push(`No new products were added during this run.`);
-  }
 
   MailApp.sendEmail({
     to: recipientEmail,
