@@ -266,17 +266,17 @@ function fetchPaginatedProductsWithFilter_(extraParams: Record<string, string | 
     if (!products.length) break;
 
     let newProductsCount = 0;
-    products.forEach((product) => {
+    for (const product of products) {
       const productNumber = getProductNumber_(product);
       const launchDate = getLaunchDate_(product);
       const id = productNumber && launchDate ? `${productNumber}:${formatDate_(launchDate)}` : String(product.productId || product.ProductId || '');
 
-      if (!id || seen[id]) return;
+      if (!id || seen[id]) continue;
 
       seen[id] = true;
       allProducts.push(product);
       newProductsCount++;
-    });
+    }
 
     if (newProductsCount === 0 || products.length < CONFIG.PAGE_SIZE) break;
   }
